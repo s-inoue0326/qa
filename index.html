@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>QA</title>
+<meta name="theme-color" content="#12151b">
 <style>
 :root{
   --bg:#f4f5f7; --card:#ffffff; --ink:#1d2433; --sub:#667085; --line:#e3e6ec;
@@ -189,6 +190,7 @@ textarea{width:100%;min-height:70px;margin-top:6px;font:inherit;font-size:16px;l
 .foot{font-size:11px;color:var(--sub);text-align:right;margin-top:10px}
 .nav{display:flex;justify-content:space-between;margin-top:6px}
 .banner{background:var(--card);border:1px solid var(--ng);color:var(--ng);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+.banner.info{border-color:var(--line);color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:9px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;z-index:9}
 .toast.show{opacity:.92}
@@ -241,6 +243,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
 <div class="wrap">
   <header>
     <span class="sp"></span>
+    <button id="hfBtn" class="micbtn hidden" data-nobusy title="ハンズフリー（問題を読み上げ、声で判定）">🎧</button>
     <button id="micBtn" class="micbtn hidden" data-nobusy title="独り言（声に出して考える）">🎤 独り言</button>
     <span id="status" class="pill">読み込み中…</span>
     <button id="quitBtn" class="ghost hidden">中断</button>
@@ -286,6 +289,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     </div>
     <button id="paperBtn" class="second">紙の問題を記録（構造計算）</button>
     <button id="progBtn" class="second">進み具合を見る</button>
+    <div class="foot" id="verFoot"></div>
   </section>
 
   <!-- マイク対応版（Googleの枠の外）の初回設定 -->
@@ -469,8 +473,10 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   function extSet(c){ try{ localStorage.setItem('qa_ext',JSON.stringify(c)); }catch(e){} }
   function show(id){ ['home','pre','quiz','done','prog','paper','petPage','setup'].forEach(function(s){ $(s).classList.toggle('hidden', s!==id); });
     if (id!=='quiz'){ $('setSheet').classList.add('hidden'); $('luck').classList.add('hidden'); }
-    $('quitBtn').classList.toggle('hidden', id!=='quiz'); $('micBtn').classList.toggle('hidden', id!=='quiz');
+    $('quitBtn').classList.toggle('hidden', id!=='quiz'); $('micBtn').classList.toggle('hidden', id!=='quiz'); $('hfBtn').classList.toggle('hidden', id!=='quiz');
+    if (id!=='quiz' && window.hfLeave) hfLeave(id);
     if (id!=='quiz' && window.talkStop) talkStop(); else if (window.talkUI) talkUI();
+    if (window.wakeSet) wakeSet(id==='quiz');
     window.scrollTo(0,0); }
   function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(e._t); e._t=setTimeout(function(){ e.classList.remove('show'); },2000); }
   function status(){ var st=$('status');
@@ -485,7 +491,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     return m; }
   function appUrl(){ return (S.home && S.home.url) || ''; }
   function reloadApp(){ if (!IN_GAS){ location.reload(); return; } var u=appUrl(); try{ if (u){ window.open(u,'_top'); return; } }catch(e){} location.reload(); }
-  function banner(html){ var b=$('banner'); if(!html){ b.classList.add('hidden'); b.innerHTML=''; return; }
+  function banner(html){ var b=$('banner'); b.classList.remove('info'); if(!html){ b.classList.add('hidden'); b.innerHTML=''; return; }
     if (S.auth401) html+='<div class="qmenu"><button class="small" id="authReload" data-nobusy>読み込み直す</button></div>';
     b.innerHTML=html; b.classList.remove('hidden'); if ($('authReload')) $('authReload').onclick=reloadApp; }
   function judgeOf(result, conf, first){
@@ -691,6 +697,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     renderMimg(c);
     preloadImgs(imgsOf(c).concat(imgsOf(S.cards[S.pos+1])));   // 今の問題と次の問題の図を先に読む
     prefetch();
+    if (HF.on) setTimeout(hfOnRender,0);
   }
   // ---------- 図の先読み（まとめて読む・端末に覚えておく） ----------
   function imgsOf(c){ if(!c||c.missing) return []; var a=c.img?[c.img]:[]; (c.rel||[]).forEach(function(x){ if(x.img) a.push(x.img); }); return a; }
@@ -751,7 +758,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   $('causeChips').addEventListener('click',function(e){ var b=e.target.closest('.chip'); if(!b) return; S.cause=(S.cause===b.dataset.v)?'':b.dataset.v; setChips('causeChips',S.cause); saveDraft(); });
   $('basis').addEventListener('input',saveDraft); $('memo').addEventListener('input',saveDraft);
   $('revealBtn').onclick=function(){ $('swipeHint').classList.toggle('hidden', !('ontouchstart' in window) || !swipeOn()); $('revealBtn').classList.add('hidden'); $('ansBox').classList.remove('hidden'); loadRelated(cur());
-    if (!document.body.classList.contains('kb')) $('ansBox').scrollIntoView({behavior:'smooth',block:'nearest'}); };
+    if (!document.body.classList.contains('kb')) $('ansBox').scrollIntoView({behavior:'smooth',block:'nearest'}); if (HF.on) hfAnswer(); };
 
   function send(job){
     S.pending++; status();
@@ -857,7 +864,8 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     denied:'マイクの許可がオフです。Chrome の ⋮ → 設定 → サイトの設定 → マイク で script.google.com を許可してから、もう一度「🎤 独り言」を押してください。それでも使えないときは、キーボードのマイクで話すと数えます。',
     none:'このブラウザは音声認識に対応していません。キーボードのマイクで話すと数えます。',
     other:'音声認識を始められませんでした。キーボードのマイクで話すと数えます。'};
-  function talkFallback(why, code){ T.on=false; T.fb=true; T.why=why||'other'; talkUI(); $('talkWhy').classList.remove('hidden'); $('talkWhy').title=code||T.why;
+  function talkFallback(why, code){ if (HF.on){ hfStop(); banner('ハンズフリーを止めました：マイクが使えません（'+esc(code||why||'')+'）。'+esc(TWHY[why]||'')+'<div class="qmenu"><button class="small" id="hfx" data-nobusy>閉じる</button></div>'); $('hfx').onclick=function(){ banner(''); }; return; }
+    T.on=false; T.fb=true; T.why=why||'other'; talkUI(); $('talkWhy').classList.remove('hidden'); $('talkWhy').title=code||T.why;
     toast('キーボードのマイクで話してください（理由は「?」）'); }
   $('talkWhy').onclick=function(){ banner(esc(TWHY[T.why]||TWHY.other)+(this.title&&this.title!==T.why?'（'+esc(this.title)+'）':'')+
     '<div class="muted" style="margin-top:6px">キーボードが大きくて邪魔なとき：Gboard の上の列の「⋯」→「フローティング」で小さくして好きな位置へ動かせます。キーボードを開いている間は、上の帯の A.・×・△・○ で解けます（キーボードは閉じません）。</div>'+
@@ -868,10 +876,10 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     if (!SR){ talkFallback('none'); return; }
     try{ var rec=new SR(); rec.lang='ja-JP'; rec.continuous=true; rec.interimResults=true; T.rec=rec;
       rec.onresult=function(e){ var fin='', itm=''; for (var i=e.resultIndex;i<e.results.length;i++){ var t=e.results[i][0].transcript; if (e.results[i].isFinal) fin+=t; else itm+=t; }
-        T.interim=itm; if (fin) talkAdd(fin); else talkShow(); };
+        T.interim=itm; if (fin){ if (!hfCmd(fin)) talkAdd(fin); } else talkShow(); };
       rec.onerror=function(e){ if (e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){ T.on=false; T.rec=null; talkFallback(e.error==='audio-capture'?'other':'denied', e.error); } };
-      rec.onend=function(){ T.interim=''; if (T.on && T.rec===rec && document.visibilityState==='visible'){ setTimeout(function(){ if (T.on && T.rec===rec){ try{ rec.start(); }catch(x){} } },300); } else talkShow(); };   // 黙ると止まるので、ONの間は自動でつなぐ
-      rec.start(); T.on=true; T.fb=false; talkUI(); toast('独り言ON：問題文や考えを声に出してください（文字数だけ記録）'); }
+      rec.onend=function(){ T.interim=''; if (T.on && !T.mute && T.rec===rec && document.visibilityState==='visible'){ setTimeout(function(){ if (T.on && !T.mute && T.rec===rec){ try{ rec.start(); }catch(x){} } },300); } else talkShow(); };   // 黙ると止まるので、ONの間は自動でつなぐ
+      rec.start(); T.on=true; T.fb=false; talkUI(); if (!HF.on) toast('独り言ON：問題文や考えを声に出してください（文字数だけ記録）'); }
     catch(e){ talkFallback('other', String(e&&e.message||e)); } }
   window.talkStop=talkStop; function talkStop(){ var r=T.rec; T.on=false; T.rec=null; T.fb=false; T.interim=''; $('talkWhy').classList.add('hidden'); document.body.classList.remove('kb'); try{ $('talkIn').blur(); }catch(e){} if (r){ try{ r.stop(); }catch(e){} } talkFlush(); talkUI(); }
   $('micBtn').onclick=function(){ if (T.on||T.fb) talkStop(); else talkStart(); };
@@ -891,7 +899,97 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     else if (S.view==='past' && $('fwdBtn')){ $('fwdBtn').click(); setTimeout(kbScroll,80); } });
   $('talkMemo').onclick=function(){ if(!T.q){ toast('この問題の独り言はまだありません'); return; } var m=$('memo'); m.value=(m.value?m.value+'\n':'')+'【独り言】'+T.q; m.dispatchEvent(new Event('input')); toast('学習メモに入れました（判定かメモ保存で保存されます）'); };
   document.addEventListener('visibilitychange',function(){ if (document.visibilityState!=='visible'){ talkFlush(); }
-    else if (T.on && T.rec){ try{ T.rec.start(); }catch(e){} } });
+    else if (T.on && T.rec && !T.mute){ try{ T.rec.start(); }catch(e){} } });
+
+  // ---------- ハンズフリー（v2.16）：問題を読み上げ、声で「答え」→「まる・さんかく・ばつ」で判定 ----------
+  // 読み上げ中はマイクを止める（自分の声を拾わないように）。考えを声に出した分は、独り言の文字数に入る。マイク対応版だけで使える。
+  var HF={on:false, speaking:false, key:'', ownTalk:false, safety:null, n:0};
+  var TTS=window.speechSynthesis||null;
+  function hfRate(){ try{ var v=Number(localStorage.getItem('qa_hfrate')); return v>=0.6&&v<=2?v:1.1; }catch(e){ return 1.1; } }
+  function hfVoice(){ var vs=TTS?TTS.getVoices():[]; for (var i=0;i<vs.length;i++) if (/^ja/i.test(vs[i].lang)) return vs[i]; return null; }
+  function hfText(t){ return String(t||'').replace(/\$([^$]*)\$/g,'$1').replace(/\\[a-z]+/gi,'').replace(/[{}^_]/g,'')
+    .replace(/≦|≤/g,'以下').replace(/≧|≥/g,'以上').replace(/㎡|m²|m2(?![0-9])/g,'平方メートル').replace(/㎥|m³|m3(?![0-9])/g,'立方メートル')
+    .replace(/[→⇒⇔↔]/g,'、').replace(/[｜|／]/g,'、').replace(/[（(]/g,'、').replace(/[）)]/g,'、').replace(/[＊*#]/g,'').replace(/\s+/g,' '); }
+  function hfSay(text, cb){
+    var done=false, fin=function(){ if(done) return; done=true; clearTimeout(HF.safety); HF.speaking=false; T.mute=false;
+      if (HF.on && T.on && T.rec){ try{ T.rec.start(); }catch(e){} } if (cb) cb(); };
+    if (!TTS){ fin(); return; }
+    try{ TTS.cancel(); }catch(e){}
+    T.mute=true; if (T.rec){ try{ T.rec.abort(); }catch(e){} }
+    var u=new SpeechSynthesisUtterance(hfText(text)); u.lang='ja-JP'; var v=hfVoice(); if (v) u.voice=v; u.rate=hfRate();
+    u.onend=fin; u.onerror=fin; HF.speaking=true;
+    clearTimeout(HF.safety); HF.safety=setTimeout(fin, 4000+String(text||'').length*260/u.rate);   // 終わりの合図が来ない端末への保険
+    TTS.speak(u); }
+  function hfNorm(t){ return String(t||'').replace(/[\s、。，．,.!?！？「」]/g,''); }
+  // 声の合図。考えを話している途中の言葉で誤って動かないよう、合図の言葉だけを短く言ったときに限る
+  function hfCmd(text){
+    if (!HF.on || HF.speaking || $('quiz').classList.contains('hidden')) return false;
+    var t=hfNorm(text); if (!t || t.length>12) return false;
+    var c=cur(), shown=!$('ansBox').classList.contains('hidden');
+    if (/^(ストップ|すとっぷ|終わり|おわり|終了|ハンズフリー(終わり|終了|オフ))$/.test(t)){ hfStop(); hfSay('ハンズフリーを止めます'); return true; }
+    if (/^(もう一度|もういちど|もう1回|もう一回|もういっかい|繰り返し|くりかえし|リピート)$/.test(t)){ HF.key=''; hfOnRender(true); return true; }
+    if (/^(ゆっくり|遅く|おそく)$/.test(t)){ hfSetRate(-0.15); return true; }
+    if (/^(速く|早く|はやく)$/.test(t)){ hfSetRate(0.15); return true; }
+    if (/^(スキップ|飛ばす|とばす|パス)$/.test(t) && S.view==='ask'){ hfSay('スキップします',function(){ $('skipBtn').click(); }); return true; }
+    if (S.view==='past' && /^(次|つぎ|次へ|進む)$/.test(t) && $('fwdBtn')){ $('fwdBtn').click(); return true; }
+    if (S.view!=='ask' || !c) return false;
+    if (!shown){
+      if (/^(答え|こたえ|答|回答|アンサー|答えを?見る|答えを?見せて|答えを?教えて|答え合わせ)$/.test(t)){ $('revealBtn').click(); return true; }
+      if (!$('firstBox').classList.contains('hidden')){
+        var cf=/^(確信|かくしん|確信あり|確)$/.test(t)?'確':/^(迷い|まよい|迷う|迷)$/.test(t)?'迷':/^(勘|かん|カン)$/.test(t)?'勘':'';
+        if (cf){ if (S.conf!==cf){ var b=document.querySelector('#confChips .chip[data-v="'+cf+'"]'); if (b) b.click(); } hfSay('自信、'+cf); return true; } }
+      return false; }
+    var r=/^(まる|マル|丸|○|〇|正解|せいかい|あたり|当たり)$/.test(t)?'ok':/^(さんかく|サンカク|三角|△|あやふや)$/.test(t)?'unsure':/^(ばつ|バツ|×|✕|罰|不正解|ふせいかい|ペケ|はずれ|外れ)$/.test(t)?'ng':'';
+    if (!r) return false;
+    var g=document.querySelector('#grades button[data-r='+r+']'); if (g){ HF.n++; g.click(); }
+    return true; }
+  function hfSetRate(d){ var v=Math.round(Math.min(1.8,Math.max(0.7,hfRate()+d))*100)/100; try{ localStorage.setItem('qa_hfrate',String(v)); }catch(e){} hfSay(d<0?'ゆっくり読みます':'速く読みます'); }
+  // 問題が変わったら読む（同じ問題を二度読まない）
+  function hfOnRender(force){
+    if (!HF.on || $('quiz').classList.contains('hidden')) return;
+    var c=cur(); if (!c || c.missing) return;
+    var shown=!$('ansBox').classList.contains('hidden');
+    var key=(S.sess&&S.sess.sid)+':'+S.pos+':'+S.view+':'+(shown?'a':'q');
+    if (!force && key===HF.key) return; HF.key=key;
+    var pre='';
+    if (!$('setSheet').classList.contains('hidden')){ $('setSheet').classList.add('hidden'); pre=S.setN+'問クリア。'; }
+    if (S.view==='past'){ hfSay(pre+'この問題は回答済みです。「次」と言うと進みます'); return; }
+    if (shown){ hfAnswer(); return; }
+    var q=pre+'第'+(S.pos+1)+'問。'+(c.img?'図があります。画面を見てください。':'')+c.q;
+    if (HF.n<2 && S.pos===HF.first) q+='。考えを声に出して、答えるときは「答え」と言ってください';
+    hfSay(q); }
+  function hfAnswer(){ var c=cur(); if (!c) return;
+    HF.key=(S.sess&&S.sess.sid)+':'+S.pos+':'+S.view+':a';
+    var pr=String(c.pair||'').split(/\s*｜\s*/).filter(Boolean);
+    var tx='答え。'+c.a+(pr.length?'。あわせて覚える。'+pr.slice(0,2).join('。'):'');
+    tx+=HF.n<2?'。判定は、まる、さんかく、ばつ、で言ってください':'。判定は？';
+    hfSay(tx); }
+  function hfStart(){
+    if (IN_GAS){ banner('ハンズフリーは「マイク対応版」で使えます（Googleの枠の中ではマイクが使えないため）。「進み具合を見る → マイク対応版を開く」から開いてください。<div class="qmenu"><button class="small" id="hfx" data-nobusy>閉じる</button></div>'); $('hfx').onclick=function(){ banner(''); }; return; }
+    if (!TTS || !SR){ toast('このブラウザは読み上げ・音声認識に対応していません（Chromeで開いてください）'); return; }
+    HF.on=true; HF.key=''; HF.n=0; HF.first=S.pos; HF.ownTalk=!T.on;
+    if (!T.on){ talkStart(); if (!HF.on) return; }
+    hfUI();
+    var first=false; try{ first=localStorage.getItem('qa_hfhelp')!=='1'; localStorage.setItem('qa_hfhelp','1'); }catch(e){}
+    if (first){ banner('<b>ハンズフリーの使い方</b><br>問題を読み上げます。考えを声に出し（独り言の文字数に入ります）、「<b>答え</b>」と言うと答えを読みます。<br>「<b>まる</b>」「<b>さんかく</b>」「<b>ばつ</b>」で判定して次へ進みます。<br>ほかに「もう一度」「スキップ」「ゆっくり」「速く」「ストップ」。初回の問題では「確信」「迷い」「勘」で自信も付けられます。<br>画面は消えないようにしてあります。イヤホンのマイクも使えます。<div class="qmenu"><button class="small" id="hfx" data-nobusy>閉じる</button></div>'); $('banner').classList.add('info'); }
+    if ($('hfx')) $('hfx').onclick=function(){ banner(''); };
+    hfOnRender(true); }
+  window.hfStop=hfStop; function hfStop(){ if (!HF.on) return; HF.on=false; HF.key=''; clearTimeout(HF.safety); HF.speaking=false; T.mute=false;
+    try{ TTS && TTS.cancel(); }catch(e){}
+    if (HF.ownTalk) talkStop(); else if (T.on && T.rec){ try{ T.rec.start(); }catch(e){} }
+    hfUI(); }
+  window.hfLeave=function(id){ if (!HF.on) return; hfStop(); if (id==='done') hfSay('この回は終わりです。おつかれさまでした'); };
+  function hfUI(){ $('hfBtn').classList.toggle('on',HF.on); $('hfBtn').textContent=HF.on?'🎧 ON':'🎧'; }
+  $('hfBtn').onclick=function(){ if (HF.on){ hfStop(); toast('ハンズフリーを止めました'); } else hfStart(); };
+  if (TTS && TTS.getVoices) { try{ TTS.getVoices(); TTS.onvoiceschanged=function(){}; }catch(e){} }
+
+  // ---------- 解いている間は画面を消さない（v2.16） ----------
+  var WL={s:null, want:false};
+  window.wakeSet=wakeSet; function wakeSet(on){ WL.want=on;
+    if (!on){ if (WL.s){ try{ WL.s.release(); }catch(e){} WL.s=null; } return; }
+    if (WL.s || !('wakeLock' in navigator) || document.visibilityState!=='visible') return;
+    navigator.wakeLock.request('screen').then(function(s){ if (!WL.want){ s.release(); return; } WL.s=s; s.addEventListener('release',function(){ if (WL.s===s) WL.s=null; }); }).catch(function(){}); }
+  document.addEventListener('visibilitychange',function(){ if (document.visibilityState==='visible' && WL.want) wakeSet(true); });
 
   // ---------- スワイプで判定（答えを見たあと。右＝○、左＝×、答えの枠をダブルタップ＝△） ----------
   // v2.14：△の「上へはじく」は、答えを読みながら画面をスクロールしたときに誤って△になっていたのでやめた（縦の動きはすべてスクロールに使う）
@@ -1429,6 +1527,20 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   $('extSave').onclick=function(){ var a=$('extApi').value.trim(), k=$('extKey').value.trim();
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(a)){ toast('窓口のURLの形が違います（…/exec で終わる）'); return; }
     if (!k){ toast('鍵を入れてください'); return; } extSet({api:a,key:k}); banner(''); load(); };
+  // ---------- 版の番号・マイク対応版をスマホに保存（v2.16） ----------
+  var APP_VER='2.16';
+  $('verFoot').textContent='QA v'+APP_VER+(IN_GAS?'（Google版）':'（マイク対応版）');
+  // 画面（index.html）をスマホに保存しておき、次から一瞬で開く。電波が弱くても開ける。新しい版は裏で取りに行き、届いたら知らせる（sw.js）
+  if (!IN_GAS && 'serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.href)){
+    try{ var mf=document.createElement('link'); mf.rel='manifest'; mf.href='manifest.webmanifest'; document.head.appendChild(mf); }catch(e){}
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+    navigator.serviceWorker.addEventListener('message',function(e){ if (!e.data || e.data.type!=='updated') return;
+      var b=document.createElement('div'); b.className='banner'; b.id='verBanner'; b.style.borderColor='var(--accent)'; b.style.color='var(--ink)';
+      b.innerHTML='新しい版が届きました。開き直すと切り替わります。<div class="qmenu"><button class="small" id="verGo" data-nobusy>今すぐ切り替える</button><button class="small" id="verLater" data-nobusy>あとで</button></div>';
+      if ($('verBanner')) return; $('banner').parentNode.insertBefore(b,$('banner'));
+      $('verGo').onclick=function(){ if (S.pending){ toast('保存中です。少し待ってから押してください'); return; } location.reload(); };
+      $('verLater').onclick=function(){ b.remove(); }; });
+  }
   function startApp(){ var c=extCfg(); if (!IN_GAS && !(c.api && c.key)){ $('extApi').value=c.api||''; $('extKey').value=c.key||''; show('setup'); $('status').textContent='接続の設定'; return; } load(); }
   startApp();
 })();
