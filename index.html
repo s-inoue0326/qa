@@ -93,7 +93,7 @@ header{flex-wrap:wrap}
 .tkeys .k-a{background:var(--reveal);color:var(--reveal-ink)} .tkeys .k-ng{background:var(--ng)} .tkeys .k-un{background:var(--unsure)} .tkeys .k-ok{background:var(--ok)}
 /* キーボードを開いて話している間（v2.15）：画面の上半分だけで解けるように、問いと答え以外を隠し、判定ボタンを上の帯に出す */
 body.kb .tkeys{display:flex}
-body.kb #firstBox,body.kb .memo,body.kb .foot,body.kb #quiz>.nav,body.kb .swipehint,body.kb #pairBox,body.kb #relBox,body.kb #causeBox,body.kb #grades,body.kb .todaybar,body.kb #quiz>.meta,body.kb #quiz>.bar,body.kb .gbox,body.kb #revealBtn{display:none!important}
+body.kb #talkPet,body.kb #firstBox,body.kb .memo,body.kb .foot,body.kb #quiz>.nav,body.kb .swipehint,body.kb #pairBox,body.kb #relBox,body.kb #causeBox,body.kb #grades,body.kb .todaybar,body.kb #quiz>.meta,body.kb #quiz>.bar,body.kb .gbox,body.kb #revealBtn{display:none!important}
 body.kb .q{font-size:16px;line-height:1.5}
 body.kb .ans{font-size:15px;padding:10px;margin-top:8px}
 body.kb #quiz .card{padding:10px;margin:6px 0}
@@ -190,6 +190,30 @@ textarea{width:100%;min-height:70px;margin-top:6px;font:inherit;font-size:16px;l
 .foot{font-size:11px;color:var(--sub);text-align:right;margin-top:10px}
 .nav{display:flex;justify-content:space-between;margin-top:6px}
 .banner{background:var(--card);border:1px solid var(--ng);color:var(--ng);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+.talkpet{display:flex;align-items:center;gap:8px;margin-top:10px}
+.talkpet .pet{display:inline-block;width:40px;height:40px;flex:none}
+.talkpet .bub{font-size:12px;color:var(--sub);background:var(--ans);border:1px solid var(--ans-line);border-radius:12px;padding:5px 10px}
+.pet .pm{display:none}
+.talkpet .pet .pm{display:block;transform-box:fill-box;transform-origin:center;animation:yap 7s infinite}
+.talkpet .pet .m0{display:none}
+@keyframes yap{0%,32%,100%{transform:scaleY(.2)}4%,12%,20%,28%{transform:scaleY(1)}8%,16%,24%{transform:scaleY(.35)}}
+.ttbtn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:999px;padding:3px 9px 3px 4px;font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ttbtn.run{color:var(--ink);border-color:var(--ng)} .ttbtn.brk{color:var(--ink);border-color:var(--ok)}
+.disc{display:inline-block;border-radius:50%;background:var(--line);flex:none}
+.studyrow{display:flex;align-items:center;gap:14px}
+.studyrow .disc{width:64px;height:64px}
+.ttbig{width:150px;height:150px;margin:6px auto 0;display:block;position:relative}
+.ttbig span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--ink);text-shadow:0 0 6px var(--card)}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:46px;margin-top:8px}
+.wk div{background:var(--ng);opacity:.55;border-radius:3px 3px 0 0;min-height:2px}
+.wk div.today{opacity:1}
+.wkl{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;color:var(--sub);text-align:center}
+.pwatch{display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:14px}
+.pwatch b{font-size:24px;font-variant-numeric:tabular-nums;min-width:72px}
+.stepin{display:flex;gap:4px;align-items:center}
+.stepin input{flex:1;min-width:0}
+.stepin button{flex:none;width:38px;padding:8px 0}
+button.armed{color:#fff!important;background:var(--ng)!important;border-color:var(--ng)!important}
 .banner.info{border-color:var(--line);color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:9px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;z-index:9}
@@ -243,6 +267,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
 <div class="wrap">
   <header>
     <span class="sp"></span>
+    <button id="ttBtn" class="ttbtn hidden" data-nobusy title="学習時間とタイマー"><i class="disc" id="ttDisc" style="width:18px;height:18px"></i><span id="ttTxt"></span></button>
     <button id="hfBtn" class="micbtn hidden" data-nobusy title="ハンズフリー（問題を読み上げ、声で判定）">🎧</button>
     <button id="micBtn" class="micbtn hidden" data-nobusy title="独り言（声に出して考える）">🎤 独り言</button>
     <span id="status" class="pill">読み込み中…</span>
@@ -262,6 +287,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     <div id="finalHint" class="card resume hidden"></div>
     <div class="card hidden" id="petCard"></div>
     <div class="card game hidden" id="gameCard"></div>
+    <div class="card" id="studyCard"><div class="muted">今日の学習時間</div><div id="studyBody"></div></div>
     <div class="card" id="todayCard"><div class="muted">今日解いた問題</div><div id="todayBody"></div></div>
     <div class="row2">
       <div class="stat"><span class="muted">未回答（初回）</span><b id="cFirst">0</b></div>
@@ -332,15 +358,17 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     <div class="card paper">
       <div class="h2" style="font-weight:700">紙の問題を記録</div>
       <div class="muted">本で解いた問題の結果を記録します。△・×は弱点リストに入り、復習日になると「【紙】p.○ 問題○を解く」と出ます（紙で解いて判定）。</div>
+      <div class="pwatch">⏱ <b id="pwT">0:00</b><button class="small" id="pwGo" data-nobusy>一時停止</button><button class="small" id="pwReset" data-nobusy>0に戻す</button></div>
+      <div class="muted" style="font-size:12px">この画面を開くと自動で計ります。記録すると、かかった時間が自動で入り、次の問題番号に進みます。</div>
       <label class="f" for="pBook">本</label><input id="pBook">
       <label class="f" for="pTheme">テーマ（任意）</label><input id="pTheme" placeholder="例：静定トラス、たわみ、座屈">
-      <div class="two"><div><label class="f" for="pPage">ページ</label><input id="pPage" inputmode="numeric" placeholder="例：48"></div>
-        <div><label class="f" for="pNo">問題番号</label><input id="pNo" placeholder="例：3"></div></div>
+      <div class="two"><div><label class="f" for="pPage">ページ</label><div class="stepin"><button class="small" data-step="pPage" data-d="-1" data-nobusy>−</button><input id="pPage" inputmode="numeric" placeholder="例：48"><button class="small" data-step="pPage" data-d="1" data-nobusy>＋</button></div></div>
+        <div><label class="f" for="pNo">問題番号</label><div class="stepin"><button class="small" data-step="pNo" data-d="-1" data-nobusy>−</button><input id="pNo" inputmode="numeric" placeholder="例：3"><button class="small" data-step="pNo" data-d="1" data-nobusy>＋</button></div></div></div>
       <label class="f">判定</label>
       <div class="seg" id="pJudge"><button data-v="ng">× 不正解</button><button data-v="unsure">△ あやふや</button><button data-v="ok">○ 正解</button></div>
       <label class="f">原因（任意）</label>
       <div class="chips" id="pCause"><button class="chip" data-v="記憶違い">記憶違い</button><button class="chip" data-v="未学習">未学習</button><button class="chip" data-v="理解不足">理解不足</button><button class="chip" data-v="読み違い">読み違い</button><button class="chip" data-v="計算ミス">計算ミス</button></div>
-      <div class="two"><div><label class="f" for="pDate">解いた日</label><input id="pDate" type="date"></div><div><label class="f" for="pMin">時間（分・任意）</label><input id="pMin" type="number" inputmode="numeric" min="0"></div></div>
+      <div class="two"><div><label class="f" for="pDate">解いた日</label><input id="pDate" type="date"></div><div><label class="f" for="pMin">時間（分・空なら⏱から）</label><input id="pMin" type="number" inputmode="numeric" min="0"></div></div>
       <label class="f" for="pMemo">メモ（任意）</label><textarea id="pMemo" placeholder="例：反力の向きを逆にした"></textarea>
       <button id="pSave" class="primary">記録する</button>
       <div class="muted" id="pRecent" style="margin-top:10px"></div>
@@ -376,6 +404,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
       <div class="meta"><span id="where"></span><span id="streak"></span></div>
       <div class="q" id="qText"></div>
       <div class="qimg hidden" id="qImg"></div>
+      <div id="talkPet" class="talkpet hidden"><span class="pet" id="tpPet"></span><span class="bub" id="tpBub"></span></div>
 
       <div id="firstBox" class="hidden">
         <div class="sub">自信（任意・答えを見る前に）</div>
@@ -442,6 +471,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
 <div id="toast" class="toast"></div>
 <div id="swipeFx" class="swipefx"></div>
 <div id="setSheet" class="sheet hidden"></div>
+<div id="ttSheet" class="sheet hidden"></div>
 <div id="luck" class="luck hidden"></div>
 
 <script>
@@ -477,6 +507,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     if (id!=='quiz' && window.hfLeave) hfLeave(id);
     if (id!=='quiz' && window.talkStop) talkStop(); else if (window.talkUI) talkUI();
     if (window.wakeSet) wakeSet(id==='quiz');
+    $('ttBtn').classList.toggle('hidden', id==='setup'); if (window.studyLeave && id!=='quiz') studyLeave();
     window.scrollTo(0,0); }
   function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(e._t); e._t=setTimeout(function(){ e.classList.remove('show'); },2000); }
   function status(){ var st=$('status');
@@ -537,7 +568,8 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
       var up=String(x.updated||x.started||''); var d=up?new Date(up):null;
       var when=d&&!isNaN(d)?(d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2):'';
       return '<div class="sesrow"><div><div class="t">'+esc(({first:'初回',review:'復習',practice:'練習',final:'総復習'}[x.mode]||''))+'　'+esc(lb)+'</div>'+
-        '<div class="muted">'+x.i+' / '+x.n+'問'+(when?'　最後 '+when:'')+'</div></div><div class="btns"><button class="small" data-del="'+esc(x.sid)+'">削除</button><button class="small" data-sid="'+esc(x.sid)+'">続きから</button></div></div>'; }).join('');
+        '<div class="muted">'+x.i+' / '+x.n+'問'+(when?'　最後 '+when:'')+'</div></div><div class="btns"><button class="small ghost" data-del="'+esc(x.sid)+'" data-label="'+esc(lb)+'" data-nobusy>削除</button><button class="small" data-sid="'+esc(x.sid)+'">続きから</button></div></div>'; }).join('');
+    S.prac=h.prac||S.prac||null; if (h.study) ST.srv=h.study; renderStudy(); ttUI();
     renderToday(h.todayCount);
     buildSubj(); refreshStart();
   }
@@ -595,7 +627,10 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
       .catch(function(e){ $('goBtn').disabled=false; $('goBtn').textContent='始める'; refreshStart(); show('home'); banner('始められませんでした：'+esc(errMsg(e))); }); }
   $('resumeList').addEventListener('click',function(e){
     var d=e.target.closest('[data-del]');
-    if (d){ if(!confirm('この中断中の学習を一覧から消しますか？（それまでの回答の記録は消えません）')) return; d.classList.add('busy'); d.textContent='削除中…';
+    if (d){ if (!d.classList.contains('armed')){   // v2.17：1回目は「もう一度押すと削除」に変わるだけ（4秒で戻る）
+        d.classList.add('armed'); d.textContent='もう一度押すと削除'; clearTimeout(d._t); d._t=setTimeout(function(){ d.classList.remove('armed'); d.textContent='削除'; },4000); return; }
+      clearTimeout(d._t); d.classList.remove('armed'); d.textContent='削除';
+      if(!confirm('本当に削除しますか？\n「'+(d.getAttribute('data-label')||'この中断中の学習')+'」を一覧から消します（それまでの回答の記録は消えません）')) return; d.classList.add('busy'); d.textContent='削除中…';
       api('deleteSession',d.getAttribute('data-del')).then(function(){ toast('削除しました'); load(); }).catch(function(e){ d.classList.remove('busy'); d.textContent='削除'; banner(esc(errMsg(e))); }); return; }
     var b=e.target.closest('[data-sid]'); if(!b) return; b.classList.add('busy'); b.textContent='読み込み中…';
     api('resumeSession',b.getAttribute('data-sid')).then(function(r){ b.classList.remove('busy'); b.textContent='続きから'; if(!r){ toast('この学習は終わっています'); load(); return; } begin(r.session, r.from, r.cards); })
@@ -610,10 +645,10 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
       subs.map(function(sj){ var r=t.subj[sj]||{}, n=modes.reduce(function(a,m){ return a+(r[m]||0); },0);
         return '<tr><td>'+sj+'</td>'+modes.map(function(m){ return '<td>'+(r[m]||'')+'</td>'; }).join('')+'<td><b>'+(n||'')+'</b></td></tr>'; }).join('')+'</table>'+
       (function(){ var k=(S.home&&S.home.talk)||{}, n=Math.max(k.today||0, (function(){ try{ var v=JSON.parse(localStorage.getItem('qa_talk')||'null'); return v&&v.day===todayStr()?v.n:0; }catch(e){ return 0; } })());
-        return '<div class="muted" style="margin-top:6px">🎤 独り言 今日 <b style="color:var(--ink)">'+n.toLocaleString()+'</b>字'+(k.total?'・合計 '+k.total.toLocaleString()+'字（1日の最高 '+(k.best||0).toLocaleString()+'字）':'・解く画面の右上「🎤 独り言」で始められます')+'</div>'; })();
+        return pracLine()+'<div class="muted" style="margin-top:6px">🎤 独り言 今日 <b style="color:var(--ink)">'+n.toLocaleString()+'</b>字'+(k.total?'・合計 '+k.total.toLocaleString()+'字（1日の最高 '+(k.best||0).toLocaleString()+'字）':'・解く画面の右上「🎤 独り言」で始められます')+'</div>'; })();
     todayBar(); }
   function todayBar(){ var t=S.today||{mode:{}}, m=t.mode||{};
-    $('todayBar').textContent='今日 '+(t.total||0)+'問（'+TMODES.filter(function(k){ return m[k]; }).map(function(k){ return k+(m[k]); }).join('・')+(TMODES.some(function(k){ return m[k]; })?'':'まだ0')+'）'; }
+    var pr=S.prac||{}; $('todayBar').textContent='今日 '+(t.total||0)+'問（'+TMODES.filter(function(k){ return m[k]; }).map(function(k){ return k+(m[k]); }).join('・')+(TMODES.some(function(k){ return m[k]; })?'':'まだ0')+'）'+(pr.total?'＋練習'+pr.total:''); }
   function remainBar(){   // あと○問で章クリア（初回で章を選んだとき）／あと○問（そのほか）
     if (!S.sess || S.local){ $('remainBar').textContent=''; return; }
     var left=Math.max(0,S.n-Object.keys(S.answered).length);
@@ -697,6 +732,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     renderMimg(c);
     preloadImgs(imgsOf(c).concat(imgsOf(S.cards[S.pos+1])));   // 今の問題と次の問題の図を先に読む
     prefetch();
+    tpShow(S.view==='ask');
     if (HF.on) setTimeout(hfOnRender,0);
   }
   // ---------- 図の先読み（まとめて読む・端末に覚えておく） ----------
@@ -757,7 +793,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   $('confChips').addEventListener('click',function(e){ var b=e.target.closest('.chip'); if(!b) return; S.conf=(S.conf===b.dataset.v)?'':b.dataset.v; setChips('confChips',S.conf); saveDraft(); updateHints(); });
   $('causeChips').addEventListener('click',function(e){ var b=e.target.closest('.chip'); if(!b) return; S.cause=(S.cause===b.dataset.v)?'':b.dataset.v; setChips('causeChips',S.cause); saveDraft(); });
   $('basis').addEventListener('input',saveDraft); $('memo').addEventListener('input',saveDraft);
-  $('revealBtn').onclick=function(){ $('swipeHint').classList.toggle('hidden', !('ontouchstart' in window) || !swipeOn()); $('revealBtn').classList.add('hidden'); $('ansBox').classList.remove('hidden'); loadRelated(cur());
+  $('revealBtn').onclick=function(){ $('swipeHint').classList.toggle('hidden', !('ontouchstart' in window) || !swipeOn()); $('revealBtn').classList.add('hidden'); $('ansBox').classList.remove('hidden'); tpShow(false); loadRelated(cur());
     if (!document.body.classList.contains('kb')) $('ansBox').scrollIntoView({behavior:'smooth',block:'nearest'}); if (HF.on) hfAnswer(); };
 
   function send(job){
@@ -800,9 +836,9 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     var memo=($('memo').value!==c._memo0)?cleanTex($('memo').value):null;
     var payload={result:r, conf:firstMode?S.conf:'', basis:firstMode?$('basis').value:'', cause:firstMode&&judge!=='○'?S.cause:'', memo:memo};
     S.answered[S.pos]={judge:judge, pending:!S.local&&S.sess.mode!=='practice', result:r};
-    if (S.local){ S.local.tally[judge]++; if (memo!==null) send({type:'memo',card:c,memo:memo}); }
+    if (S.local){ S.local.tally[judge]++; if (memo!==null) send({type:'memo',card:c,memo:memo}); api('pracCount',c.subj||'',judge,1).then(pracGot).catch(function(){}); pracLocal(c.subj, judge); }
     else if (S.sess.mode==='practice'){ (S.sess.res[judge]=(S.sess.res[judge]||0)+1); if (memo!==null) send({type:'memo',card:c,memo:memo});
-      api('practiceMark',S.sess.sid,S.pos,judge).catch(function(){}); }   // 練習も途中データに残す（中断して再開できる）
+      api('practiceMark',S.sess.sid,S.pos,judge,c.subj||'').then(pracGot).catch(function(){}); pracLocal(c.subj, judge); }   // 練習も途中データに残す（中断して再開できる）
     else {
       var idx=S.pos, before=c.streak; countToday(c,1);
       send({type:'grade',sid:S.sess.sid,idx:idx,card:c,payload:payload}).then(function(res){ if(res&&res.dup){ toast('この問題は別の画面ですでに記録済みでした（'+res.judge+'）。二重には記録していません'); return; }
@@ -858,7 +894,8 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     $('talkNum').innerHTML='この問題 <b>'+T.qn+'</b>字・今日 <b>'+talkToday().toLocaleString()+'</b>字'; }
   window.talkUI=talkUI; function talkUI(){ var q=!$('quiz').classList.contains('hidden');
     $('micBtn').classList.toggle('on',T.on||T.fb); $('micBtn').textContent=T.on?'🎤 ON':(T.fb?'🎤 ON（キーボード）':'🎤 独り言');
-    $('talkBar').classList.toggle('hidden',!q || !(T.on||T.fb)); $('talkIn').classList.toggle('hidden',!T.fb); $('talkTxt').classList.toggle('hidden',T.fb); talkShow(); }
+    $('talkBar').classList.toggle('hidden',!q || !(T.on||T.fb)); $('talkIn').classList.toggle('hidden',!T.fb); $('talkTxt').classList.toggle('hidden',T.fb); talkShow();
+    if (q && S.sess) tpShow(S.view==='ask' && $('ansBox').classList.contains('hidden')); }
   // 音声認識が使えない理由（?で説明）。policy＝Googleのアプリの枠がマイクを許していない／denied＝マイクの許可がオフ／none＝ブラウザが未対応
   var TWHY={policy:'このアプリはGoogleの画面の中（枠の中）で動いていて、その枠がマイクを許可していないため、アプリの中では音声認識を使えません（Googleの仕様。こちらでは変えられません）。キーボードのマイクで話すと数えます。',
     denied:'マイクの許可がオフです。Chrome の ⋮ → 設定 → サイトの設定 → マイク で script.google.com を許可してから、もう一度「🎤 独り言」を押してください。それでも使えないときは、キーボードのマイクで話すと数えます。',
@@ -1024,7 +1061,8 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   function redo(){
     var pos=S.pos, past=S.answered[pos];
     if (S.local || S.sess.mode==='practice'){ var t=S.local?S.local.tally:S.sess.res; if(t[past.judge]) t[past.judge]--; delete S.answered[pos];
-      if (!S.local) api('practiceMark',S.sess.sid,pos,'').catch(function(){}); render(); return; }
+      if (S.local){ var pc=S.cards[pos]||{}; api('pracCount',pc.subj||'',past.judge,-1).then(pracGot).catch(function(){}); }
+      if (!S.local) api('practiceMark',S.sess.sid,pos,'').then(pracGot).catch(function(){}); render(); return; }
     if (past.pending){ toast('保存が終わるまで少し待ってください'); return; }
     $('redoBtn').disabled=true;
     api('undoLast',S.sess.sid,pos).then(function(r){ if (!past.srv && cur()) countToday(r.card||cur(),-1); if (past.srv && S.baseRes && S.baseRes[past.judge]) S.baseRes[past.judge]--; delete S.answered[pos]; if (r.card) S.cards[r.idx]=r.card; S.pos=r.idx; toast('取り消しました。もう一度判定してください'); render(); })
@@ -1317,7 +1355,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
     var eyes = mood==='awake'||mood==='egg' ? '<circle cx="41" cy="58" r="4.2" fill="#2b2b2b"/><circle cx="59" cy="58" r="4.2" fill="#2b2b2b"/><circle cx="42.4" cy="56.6" r="1.3" fill="#fff"/><circle cx="60.4" cy="56.6" r="1.3" fill="#fff"/>'
       : mood==='sleepy' ? '<path d="M36 58 q5 3 10 0" stroke="#2b2b2b" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M54 58 q5 3 10 0" stroke="#2b2b2b" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
       : '<path d="M36 59 q5 -3 10 0" stroke="#2b2b2b" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M54 59 q5 -3 10 0" stroke="#2b2b2b" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
-    var mouth = mood==='awake' ? '<path d="M45 66 q5 5 10 0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>' : '<circle cx="50" cy="67" r="2" fill="#2b2b2b"/>';
+    var mouth = '<g class="m0">'+(mood==='awake' ? '<path d="M45 66 q5 5 10 0" stroke="#2b2b2b" stroke-width="2.2" fill="none" stroke-linecap="round"/>' : '<circle cx="50" cy="67" r="2" fill="#2b2b2b"/>')+'</g><ellipse class="pm" cx="50" cy="68" rx="5" ry="4" fill="#7a2f35"/>';
     var body = st==='たまご'
       ? '<ellipse cx="50" cy="60" rx="27" ry="33" fill="'+col+'" stroke="#00000022"/><path d="M27 52 l7 5 l6 -6 l7 6 l7 -6 l7 6 l6 -6 l7 5" stroke="#b9a678" stroke-width="2" fill="none"/>'
       : '<ellipse cx="38" cy="90" rx="8" ry="4" fill="#00000033"/><ellipse cx="62" cy="90" rx="8" ry="4" fill="#00000033"/><ellipse cx="50" cy="62" rx="31" ry="28" fill="'+col+'" stroke="#00000022"/><ellipse cx="33" cy="66" rx="5" ry="3" fill="#ff9aa8" opacity=".6"/><ellipse cx="67" cy="66" rx="5" ry="3" fill="#ff9aa8" opacity=".6"/>';
@@ -1423,7 +1461,7 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   function pRecent(){ $('pRecent').textContent='読み込み中…';
     api('recentPaper',8).then(function(l){ $('pRecent').innerHTML=l.length?'最近の記録<br>'+l.map(function(x){ return esc(String(x.at).slice(5))+'　p.'+esc(x.page)+' 問題'+esc(x.no)+(x.theme?'（'+esc(x.theme)+'）':'')+'　'+esc(x.judge)+(x.min?'　'+x.min+'分':''); }).join('<br>'):'まだ記録はありません'; })
       .catch(function(){ $('pRecent').textContent=''; }); }
-  $('paperBtn').onclick=function(){ banner(''); pLoad(); P={judge:'',cause:''}; setChips('pCause',''); [].forEach.call($('pJudge').querySelectorAll('button'),function(x){ x.classList.remove('on'); });
+  $('paperBtn').onclick=function(){ banner(''); pLoad(); PW.reset(true); P={judge:'',cause:''}; setChips('pCause',''); [].forEach.call($('pJudge').querySelectorAll('button'),function(x){ x.classList.remove('on'); });
     $('pNo').value=''; $('pMin').value=''; $('pMemo').value=''; $('pDate').value=todayStr().replace(/\//g,'-'); $('pDate').max=$('pDate').value; show('paper'); pRecent(); };
   $('pHome').onclick=function(){ load(); };
   $('pJudge').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; P.judge=b.dataset.v;
@@ -1432,12 +1470,14 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   $('pSave').onclick=function(){
     if (!P.judge){ toast('判定（○△×）を選んでください'); return; }
     if (!$('pPage').value.trim() && !$('pNo').value.trim()){ toast('ページか問題番号を入れてください'); return; }
+    if (!$('pMin').value.trim() && PW.sec()>=30) $('pMin').value=String(Math.max(1,Math.round(PW.sec()/60)));
     var b=$('pSave'); b.classList.add('busy'); b.textContent='記録中…'; pKeep();
     api('recordPaper',{book:$('pBook').value,theme:$('pTheme').value,page:$('pPage').value,no:$('pNo').value,result:P.judge,cause:P.cause,min:$('pMin').value,memo:cleanTex($('pMemo').value),date:$('pDate').value})
       .then(function(r){ b.classList.remove('busy'); b.textContent='記録する'; if (S.home) S.home.todayCount=r.today; S.today=r.today;
         toast('記録：'+r.judge+(r.added?'　弱点リストへ（次回 '+r.next+'）':(r.row?'　弱点リストの復習（次回 '+r.next+'）':'')));
         P.judge=''; P.cause=''; setChips('pCause',''); [].forEach.call($('pJudge').querySelectorAll('button'),function(x){ x.classList.remove('on'); });
-        $('pNo').value=''; $('pMin').value=''; $('pMemo').value=''; pRecent(); })
+        var no=$('pNo').value.trim(); $('pNo').value=/^\d+$/.test(no)?String(Number(no)+1):''; $('pMin').value=''; $('pMemo').value=''; pRecent();
+        if (r.study) studyGot(r.study); PW.reset(true); })
       .catch(function(e){ b.classList.remove('busy'); b.textContent='記録する'; banner('記録できませんでした：'+esc(errMsg(e))); }); };
   // ---------- 拡大表示 ----------
   function zoom(src){ $('lbox').innerHTML='<span class="cl">閉じる ×</span><img alt="" src="'+src+'">'; $('lbox').scrollTop=0; $('lbox').classList.remove('hidden'); }
@@ -1527,8 +1567,111 @@ input[type=date]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border-
   $('extSave').onclick=function(){ var a=$('extApi').value.trim(), k=$('extKey').value.trim();
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(a)){ toast('窓口のURLの形が違います（…/exec で終わる）'); return; }
     if (!k){ toast('鍵を入れてください'); return; } extSet({api:a,key:k}); banner(''); load(); };
+  // ---------- 問題中のキャラ：口をパクパクして「声に出して考えよう」と促す（v2.17） ----------
+  var TP_MSG=['声に出して考えよう','なぜそうなる？説明してみて','根拠の条文・数値は？','似た数値と比べると？','自分の言葉で言ってみて'];
+  function tpShow(on){ var el=$('talkPet');
+    var pr=(S.pet&&S.pet.prefs)||{};
+    if (!on || pr.quiz===false || T.on || T.fb){ el.classList.add('hidden'); return; }   // 独り言がONのときは出さない（もう話している）
+    var p=S.pet||{stage:'ちびけん', mood:'awake', prefs:{}, items:[]};
+    $('tpPet').innerHTML=petSvg({stage:p.stage, mood:p.stage==='たまご'?'egg':'awake', prefs:p.prefs, items:p.items},40);
+    $('tpBub').textContent=TP_MSG[(S.pos||0)%TP_MSG.length]; el.classList.remove('hidden'); }
+
+  // ---------- 練習の○△×（本番とは分けて数える・v2.17） ----------
+  function pracLocal(subj, judge){ var p=S.prac=S.prac||{total:0,judge:{},subj:{}}; p.total++; p.judge[judge]=(p.judge[judge]||0)+1; p.subj[subj||'その他']=(p.subj[subj||'その他']||0)+1; todayBar(); }
+  function pracGot(r){ if (r && r.prac){ S.prac=r.prac; if (S.home) S.home.prac=r.prac; todayBar(); } }
+  function pracLine(){ var p=S.prac||{}; if (!p.total) return '<div class="muted" style="margin-top:6px">🔁 練習（×と△など） 今日 0問</div>';
+    var j=p.judge||{};
+    return '<div style="margin-top:6px;font-size:14px">🔁 練習（×と△など） 今日 <b>'+p.total+'</b>問 <span class="muted">（○'+(j['○']||0)+'・△'+(j['△']||0)+'・×'+((j['×']||0)+(j['×★']||0))+'）　'+
+      Object.keys(p.subj||{}).map(function(k){ return k+' '+p.subj[k]; }).join('・')+'</span></div>'; }
+
+  // ---------- 学習時間（v2.17）：解く画面が出ている時間を数える。5分なにも触らなければ止める。紙の問題は記録した分数 ----------
+  var ST={unsent:0, act:Date.now(), srv:null, idle:false};
+  ['pointerdown','keydown','scroll','touchstart'].forEach(function(ev){ document.addEventListener(ev,function(){ ST.act=Date.now(); },{passive:true,capture:true}); });
+  function stLocal(){ try{ var v=JSON.parse(localStorage.getItem('qa_study')||'null'); if (v && v.day===todayStr()) return v; }catch(e){} return {day:todayStr(), app:0}; }
+  function stSrv(){ return ST.srv||(S.home&&S.home.study)||{app:0,paper:0,today:0,week:[],goal:0}; }
+  function stToday(){ var s=stSrv(), loc=stLocal(); var app=Math.max(loc.app, (s.app||0)+ST.unsent); return {app:app, paper:s.paper||0, total:app+(s.paper||0), goal:s.goal||0}; }
+  function hm(sec){ var m=Math.floor(sec/60); return m>=60?Math.floor(m/60)+'時間'+(m%60?(m%60)+'分':''):m+'分'; }
+  function studyGot(r){ if(!r) return; ST.srv=r; if (S.home) S.home.study=r; var v=stLocal(); if (r.app>v.app){ v.app=r.app; try{ localStorage.setItem('qa_study',JSON.stringify(v)); }catch(e){} } renderStudy(); ttUI(); }
+  function studyFlush(){ var n=ST.unsent; if(!n) return; ST.unsent=0; api('addStudy',n).then(studyGot).catch(function(){ ST.unsent+=n; }); }
+  window.studyLeave=studyFlush;
+  setInterval(function(){
+    var q=!$('quiz').classList.contains('hidden') && document.visibilityState==='visible';
+    if (q && (HF.on || T.on)) ST.act=Math.max(ST.act, Date.now()-1000*60);   // 声で解いている間は触らなくても数える
+    var active=q && Date.now()-ST.act<5*60*1000;
+    if (active){ ST.unsent++; var v=stLocal(); v.app++; try{ localStorage.setItem('qa_study',JSON.stringify(v)); }catch(e){} if (ST.unsent>=120) studyFlush(); }
+    ST.idle=q && !active;
+    ttTick(); },1000);
+  document.addEventListener('visibilitychange',function(){ if (document.visibilityState!=='visible') studyFlush(); else ttTick(); });
+  function discBg(frac, col){ var d=Math.max(0,Math.min(1,frac))*360; return 'conic-gradient('+(col||'var(--ng)')+' '+d+'deg, var(--line) 0)'; }
+  function renderStudy(){ var t=stToday(), g=t.goal*60, s=stSrv(), wk=s.week||[];
+    var left=g?Math.max(0,g-t.total):0;
+    var mx=Math.max(1,g||0); wk.forEach(function(x){ mx=Math.max(mx, x.day===todayStr()?t.total:x.sec); });
+    $('studyBody').innerHTML='<div class="studyrow"><i class="disc" style="background:'+(g?discBg(left/g):discBg(0))+'"></i><div>'+
+      '<div style="font-size:22px;font-weight:700">'+hm(t.total)+'</div>'+
+      '<div class="muted">アプリ '+hm(t.app)+'・紙 '+hm(t.paper)+(g?'<br>目標 '+hm(g)+(left?'まで あと<b style="color:var(--ink)">'+hm(left)+'</b>':'　<b style="color:var(--ok)">達成！</b>'):'<br>赤い円は目標までの残り（「タイマー」で目標を決める）')+'</div></div></div>'+
+      (wk.length?'<div class="wk">'+wk.map(function(x){ var v=x.day===todayStr()?t.total:x.sec; return '<div class="'+(x.day===todayStr()?'today':'')+'" style="height:'+Math.round(v/mx*100)+'%" title="'+hm(v)+'"></div>'; }).join('')+'</div>'+
+        '<div class="wkl">'+wk.map(function(x){ return '<span>'+(x.day===todayStr()?'今日':Number(x.day.slice(8)))+'</span>'; }).join('')+'</div>':'')+
+      '<button class="small" id="ttOpen" data-nobusy style="margin-top:8px">⏱ タイマー・目標</button>';
+    $('ttOpen').onclick=ttSheet; }
+
+  // ---------- タイムタイマー（v2.17）：赤い円が減っていく集中タイマー＋先に決めた休憩 ----------
+  // 休憩を気分で取るより、時間を決めて規則的に取るほうが疲れにくく効率がよかった（Biwer ら 2023：24分+6分・12分+3分 ＞ 好きなときに休む）
+  var TT_SET=[{f:12,b:3},{f:24,b:6},{f:50,b:10}];
+  function ttGet(){ try{ return JSON.parse(localStorage.getItem('qa_tt')||'null')||{phase:''}; }catch(e){ return {phase:''}; } }
+  function ttPut(t){ try{ localStorage.setItem('qa_tt',JSON.stringify(t)); }catch(e){} }
+  function ttStart(f,b){ ttPut({phase:'focus', f:f, b:b, end:Date.now()+f*60000}); $('ttSheet').classList.add('hidden'); toast(f+'分 集中。終わったら'+b+'分休憩です'); ttUI(); }
+  function ttStop(){ ttPut({phase:''}); ttUI(); }
+  function mmss(ms){ var s=Math.max(0,Math.ceil(ms/1000)); return Math.floor(s/60)+':'+('0'+s%60).slice(-2); }
+  function ttBuzz(msg, next){
+    try{ navigator.vibrate && navigator.vibrate([300,150,300]); }catch(e){}
+    if (HF.on) hfSay(msg);
+    banner(esc(msg)+'<div class="qmenu">'+(next?'<button class="small" id="ttNext" data-nobusy>'+esc(next.label)+'</button>':'')+'<button class="small" id="ttClose" data-nobusy>閉じる</button></div>'); $('banner').classList.add('info');
+    if (next) $('ttNext').onclick=function(){ banner(''); next.go(); };
+    $('ttClose').onclick=function(){ banner(''); }; }
+  function ttTick(){ var t=ttGet(); if (!t.phase) { ttUI(); return; }
+    if (Date.now()>=t.end){
+      if (t.phase==='focus'){ ttPut({phase:'break', f:t.f, b:t.b, end:Date.now()+t.b*60000});
+        ttBuzz(t.f+'分たちました。'+t.b+'分休憩しましょう（立って歩く・遠くを見る・目を閉じる。スマホは見ない）', {label:'休憩せずに続ける', go:function(){ ttStart(t.f,t.b); }}); }
+      else { ttPut({phase:''}); ttBuzz('休憩おわり。次の'+t.f+'分を始めましょう', {label:'次の'+t.f+'分を始める', go:function(){ ttStart(t.f,t.b); }}); }
+    }
+    ttUI(); }
+  function ttUI(){ var t=ttGet(), b=$('ttBtn');
+    b.classList.toggle('run', t.phase==='focus'); b.classList.toggle('brk', t.phase==='break');
+    if (t.phase){ var len=(t.phase==='focus'?t.f:t.b)*60000, left=t.end-Date.now();
+      $('ttDisc').style.background=discBg(left/len, t.phase==='focus'?'var(--ng)':'var(--ok)'); $('ttTxt').textContent=(t.phase==='break'?'休憩 ':'')+mmss(left); }
+    else { $('ttDisc').style.background=discBg(0); $('ttTxt').textContent='今日 '+hm(stToday().total)+(ST.idle?'（停止中）':''); }
+    if (!$('ttSheet').classList.contains('hidden') && $('ttBig')) ttBigUI(); }
+  function ttBigUI(){ var t=ttGet(), el=$('ttBig'); if (!el) return;
+    if (t.phase){ var len=(t.phase==='focus'?t.f:t.b)*60000, left=t.end-Date.now(); el.style.background=discBg(left/len, t.phase==='focus'?'var(--ng)':'var(--ok)'); el.innerHTML='<span>'+(t.phase==='break'?'休憩 ':'')+mmss(left)+'</span>'; }
+    else { el.style.background=discBg(0); el.innerHTML='<span>—</span>'; }
+    $('ttToday').textContent=hm(stToday().total); }
+  function ttSheet(){ var t=ttGet(), g=stToday().goal;
+    $('ttSheet').innerHTML='<div class="row" style="display:flex;justify-content:space-between;align-items:baseline"><div class="big">今日 <span id="ttToday"></span></div><button class="ghost" id="ttX" data-nobusy>閉じる</button></div>'+
+      '<i class="disc ttbig" id="ttBig"></i>'+
+      '<div class="btns" style="grid-template-columns:repeat(3,1fr)">'+TT_SET.map(function(x,i){ return '<button class="'+(i===1?'primary':'second')+'" data-tt="'+i+'" data-nobusy>'+x.f+'分<small style="display:block;font-weight:400;font-size:11px">休憩'+x.b+'分</small></button>'; }).join('')+'</div>'+
+      (t.phase?'<button class="second" id="ttStop" data-nobusy style="margin-top:8px;width:100%">タイマーを止める</button>':'')+
+      '<div class="muted" style="margin-top:10px;font-size:12px">休憩は気分で取るより、先に決めて規則的に取るほうが疲れにくく、同じ量を短い時間で終えられました（Biwer ら 2023、大学生87人。24分と12分の差は小さい）。暗記は12分、計算は50分など、内容で変えてかまいません。</div>'+
+      '<label class="f" for="ttGoal">1日の目標（分）</label><div class="stepin"><input id="ttGoal" type="number" inputmode="numeric" min="0" value="'+(g||'')+'" placeholder="例：180"><button class="small" id="ttGoalSave" style="width:auto;padding:8px 12px">保存</button></div>';
+    $('ttSheet').classList.remove('hidden'); ttBigUI();
+    $('ttX').onclick=function(){ $('ttSheet').classList.add('hidden'); };
+    [].forEach.call($('ttSheet').querySelectorAll('[data-tt]'),function(b){ b.onclick=function(){ var x=TT_SET[Number(b.getAttribute('data-tt'))]; ttStart(x.f,x.b); }; });
+    if ($('ttStop')) $('ttStop').onclick=function(){ ttStop(); $('ttSheet').classList.add('hidden'); toast('タイマーを止めました'); };
+    $('ttGoalSave').onclick=function(){ var b=this; api('setStudyGoal',Number($('ttGoal').value)||0).then(function(r){ studyGot(r); toast('目標を保存しました'); ttBigUI(); }).catch(function(e){ banner('保存できませんでした：'+esc(errMsg(e))); }); }; }
+  $('ttBtn').onclick=ttSheet;
+
+  // ---------- 紙の問題のストップウォッチ（v2.17） ----------
+  var PW={start:0, acc:0, run:false,
+    sec:function(){ return Math.floor((PW.acc+(PW.run?Date.now()-PW.start:0))/1000); },
+    reset:function(go){ PW.acc=0; PW.start=Date.now(); PW.run=!!go; PW.ui(); },
+    ui:function(){ var s=PW.sec(); $('pwT').textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2); $('pwGo').textContent=PW.run?'一時停止':'再開'; } };
+  $('pwGo').onclick=function(){ if (PW.run){ PW.acc+=Date.now()-PW.start; PW.run=false; } else { PW.start=Date.now(); PW.run=true; } PW.ui(); };
+  $('pwReset').onclick=function(){ PW.reset(PW.run); };
+  setInterval(function(){ if (!$('paper').classList.contains('hidden')) PW.ui(); },1000);
+  $('paper').addEventListener('click',function(e){ var b=e.target.closest('[data-step]'); if(!b) return; var el=$(b.getAttribute('data-step')), v=Number(el.value.replace(/[^\d]/g,''))||0;
+    el.value=String(Math.max(1, v+Number(b.getAttribute('data-d')))); if (el.id==='pPage') pKeep(); });
+
   // ---------- 版の番号・マイク対応版をスマホに保存（v2.16） ----------
-  var APP_VER='2.16';
+  var APP_VER='2.17';
   $('verFoot').textContent='QA v'+APP_VER+(IN_GAS?'（Google版）':'（マイク対応版）');
   // 画面（index.html）をスマホに保存しておき、次から一瞬で開く。電波が弱くても開ける。新しい版は裏で取りに行き、届いたら知らせる（sw.js）
   if (!IN_GAS && 'serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.href)){
